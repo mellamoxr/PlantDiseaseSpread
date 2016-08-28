@@ -1,0 +1,278 @@
+setwd("C:/MyFile/Data Kind/Sustainable Agriculture - Plant Disease Spread/Rust")
+rust<-read.csv("RustSurvey.csv",header=T, stringsAsFactors = F)
+rustearth<-read.csv("RustSurvey+EarthEngine.csv",header=T, stringsAsFactors = F)
+
+
+####################################################################################
+#keep track of the date, month, period in which the surveys were taken
+library(lubridate)
+
+
+
+rust$mon<-month((as.POSIXlt(rust$ObsDate, format="%m/%d/%Y")))
+rust$prev1_mon<-ifelse(rust$mon-1>=1,rust$mon-1,rust$mon)
+
+#if rust$mon=1 then rust$monchar= "01", this will enable us to play with variable names later
+#This will help us matvh variables if the data were collected monthly
+rust$monchar<-ifelse(rust$mon<10,paste("0",rust$mon,sep=""),paste(rust$mon))
+rust$prev1_monchar<-ifelse(rust$prev1_mon<10,paste("0",rust$prev1_mon,sep=""),paste(rust$prev1_mon))
+
+
+#Create period label if the data were collected every two weeks(so there are 24 periods in total each year)
+#eg.if the date is in early July, rust$period=13
+rust$day<-day(as.POSIXlt(rust$ObsDate, format="%m/%d/%Y"))
+rust$period<-2*rust$mon - ifelse(rust$day<=15,1,0)
+rust$prev1_period<-ifelse(rust$period-1>=1,rust$period-1,rust$period)
+
+#if rust$period=1 then rust$periodchar= "01", this will enable us to play with variable names later
+rust$periodchar<-ifelse(rust$period<10,paste("0",rust$period,sep=""),paste(rust$period))
+rust$prev1_periodchar<-ifelse(rust$period<10,paste("0",rust$period,sep=""),paste(rust$period))
+
+####################################################################################
+#period 19 for MODIS_MOD13Q1_ is missing, create place holder here
+rustearth$MODIS_MOD13Q1_19_DetailedQA<-NA
+rustearth$MODIS_MOD13Q1_19_EVI<-NA
+rustearth$MODIS_MOD13Q1_19_NDVI<-NA
+rustearth$MODIS_MOD13Q1_19_SummaryQA<-NA
+rustearth$MODIS_MOD13Q1_19_SolarZenith<-NA
+rustearth$MODIS_MOD13Q1_19_sur_refl_b01<-NA
+rustearth$MODIS_MOD13Q1_19_sur_refl_b02<-NA
+rustearth$MODIS_MOD13Q1_19_sur_refl_b03<-NA
+rustearth$MODIS_MOD13Q1_19_sur_refl_b07<-NA
+
+###############################################################################
+rust$ls32dayndvi_curr<-NA
+rust$ls32daytoa_B1_curr<-NA
+rust$ls32daytoa_B2_curr<-NA
+rust$ls32daytoa_B3_curr<-NA
+rust$ls32daytoa_B4_curr<-NA
+rust$ls32daytoa_B5_curr<-NA
+rust$ls32daytoa_B6VCID1_curr<-NA
+rust$ls32daytoa_B6VCID2_curr<-NA
+rust$ls32daytoa_B7_curr<-NA
+rust$ls32daytoa_B8_curr<-NA
+
+rust$TRMMHQprecip_curr<-NA
+rust$TRMMIRprecip_curr<-NA
+rust$TRMMprecip_curr<-NA
+rust$TRMMerror_curr<-NA
+
+rust$MODIS_13Q1_DetailedQA_curr<-NA
+rust$MODIS_13Q1_EVI_curr<-NA
+rust$MODIS_13Q1_NDVI_curr<-NA
+rust$MODIS_13Q1_SummaryQA_curr<-NA
+rust$MODIS_13Q1_SolarZ_curr<-NA
+rust$MODIS_13Q1_b01_curr<-NA
+rust$MODIS_13Q1_b02_curr<-NA
+rust$MODIS_13Q1_b03_curr<-NA
+rust$MODIS_13Q1_b07_curr<-NA
+
+rust$MODIS_11A2_clearskydays_curr<-NA
+rust$MODIS_11A2_clearskynights_curr<-NA
+rust$MODIS_11A2_Emis31_curr<-NA
+rust$MODIS_11A2_Emis32_curr<-NA
+rust$MODIS_11A2_LSTDay1km_curr<-NA
+rust$MODIS_11A2_LSTNight1km_curr<-NA
+rust$MODIS_11A2_QCDay_curr<-NA
+rust$MODIS_11A2_QCNight_curr<-NA
+
+####################################
+rust$ls32dayndvi_prev1<-NA
+rust$ls32daytoa_B1_prev1<-NA
+rust$ls32daytoa_B2_prev1<-NA
+rust$ls32daytoa_B3_prev1<-NA
+rust$ls32daytoa_B4_prev1<-NA
+rust$ls32daytoa_B5_prev1<-NA
+rust$ls32daytoa_B6VCID1_prev1<-NA
+rust$ls32daytoa_B6VCID2_prev1<-NA
+rust$ls32daytoa_B7_prev1<-NA
+rust$ls32daytoa_B8_prev1<-NA
+
+rust$TRMMHQprecip_prev1<-NA
+rust$TRMMIRprecip_prev1<-NA
+rust$TRMMprecip_prev1<-NA
+rust$TRMMerror_prev1<-NA
+
+rust$MODIS_13Q1_DetailedQA_prev1<-NA
+rust$MODIS_13Q1_EVI_prev1<-NA
+rust$MODIS_13Q1_NDVI_prev1<-NA
+rust$MODIS_13Q1_SummaryQA_prev1<-NA
+rust$MODIS_13Q1_SolarZ_prev1<-NA
+rust$MODIS_13Q1_b01_prev1<-NA
+rust$MODIS_13Q1_b02_prev1<-NA
+rust$MODIS_13Q1_b03_prev1<-NA
+rust$MODIS_13Q1_b07_prev1<-NA
+
+rust$MODIS_11A2_clearskydays_prev1<-NA
+rust$MODIS_11A2_clearskynights_prev1<-NA
+rust$MODIS_11A2_Emis31_prev1<-NA
+rust$MODIS_11A2_Emis32_prev1<-NA
+rust$MODIS_11A2_LSTDay1km_prev1<-NA
+rust$MODIS_11A2_LSTNight1km_prev1<-NA
+rust$MODIS_11A2_QCDay_prev1<-NA
+rust$MODIS_11A2_QCNight_prev1<-NA
+
+
+################################################################################################
+
+for(i in 1:nrow(rustearth)){
+  
+  rust$ls32dayndvi_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_NDVI_",rust$monchar[i],"_NDVI",sep="")]][i]
+
+  rust$ls32daytoa_B1_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$monchar[i],"_B1",sep="")]][i]
+  rust$ls32daytoa_B2_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$monchar[i],"_B2",sep="")]][i]
+  rust$ls32daytoa_B3_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$monchar[i],"_B3",sep="")]][i]
+  rust$ls32daytoa_B4_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$monchar[i],"_B4",sep="")]][i]
+  rust$ls32daytoa_B5_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$monchar[i],"_B5",sep="")]][i]
+  rust$ls32daytoa_B6VCID1_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$monchar[i],"_B6_VCID_1",sep="")]][i]
+  rust$ls32daytoa_B6VCID2_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$monchar[i],"_B6_VCID_2",sep="")]][i]
+  rust$ls32daytoa_B7_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$monchar[i],"_B7",sep="")]][i]
+  rust$ls32daytoa_B8_curr[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$monchar[i],"_B8",sep="")]][i]
+  
+  rust$TRMMHQprecip_curr[i]<-rustearth[[paste("TRMM_3B42_",rust$periodchar[i],"_HQprecipitation",sep="")]][i]
+  rust$TRMMIRprecip_curr[i]<-rustearth[[paste("TRMM_3B42_",rust$periodchar[i],"_IRprecipitation",sep="")]][i]
+  rust$TRMMprecip_curr[i]<-rustearth[[paste("TRMM_3B42_",rust$periodchar[i],"_precipitation",sep="")]][i]
+  rust$TRMMerror_curr[i]<-rustearth[[paste("TRMM_3B42_",rust$periodchar[i],"_relativeError",sep="")]][i]
+  
+  rust$MODIS_13Q1_DetailedQA_curr[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$periodchar[i],"_DetailedQA",sep="")]][i]
+  rust$MODIS_13Q1_EVI_curr[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$periodchar[i],"_EVI",sep="")]][i]
+  rust$MODIS_13Q1_NDVI_curr[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$periodchar[i],"_NDVI",sep="")]][i]
+  rust$MODIS_13Q1_SummaryQA_curr[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$periodchar[i],"_SummaryQA",sep="")]][i]
+  rust$MODIS_13Q1_SolarZ_curr[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$periodchar[i],"_SolarZenith",sep="")]][i]
+  rust$MODIS_13Q1_b01_curr[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$periodchar[i],"_sur_refl_b01",sep="")]][i]
+  rust$MODIS_13Q1_b02_curr[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$periodchar[i],"_sur_refl_b02",sep="")]][i]
+  rust$MODIS_13Q1_b03_curr[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$periodchar[i],"_sur_refl_b03",sep="")]][i]
+  rust$MODIS_13Q1_b07_curr[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$periodchar[i],"_sur_refl_b07",sep="")]][i]
+  
+  rust$MODIS_11A2_clearskydays_curr[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$periodchar[i],"_Clear_sky_days",sep="")]][i]
+  rust$MODIS_11A2_clearskynights_curr[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$periodchar[i],"_Clear_sky_nights",sep="")]][i]
+  rust$MODIS_11A2_Emis31_curr[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$periodchar[i],"_Emis_31",sep="")]][i]
+  rust$MODIS_11A2_Emis32_curr[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$periodchar[i],"_Emis_32",sep="")]][i]
+  rust$MODIS_11A2_LSTDay1km_curr[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$periodchar[i],"_LST_Day_1km",sep="")]][i]
+  rust$MODIS_11A2_LSTNight1km_curr[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$periodchar[i],"_LST_Night_1km",sep="")]][i]
+  rust$MODIS_11A2_QCDay_curr[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$periodchar[i],"_QC_Day",sep="")]][i]
+  rust$MODIS_11A2_QCNight_curr[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$periodchar[i],"_QC_Night",sep="")]][i]
+  
+
+  ###################################################################################################
+  rust$ls32dayndvi_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_NDVI_",rust$prev1_monchar[i],"_NDVI",sep="")]][i]
+  
+  rust$ls32daytoa_B1_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$prev1_monchar[i],"_B1",sep="")]][i]
+  rust$ls32daytoa_B2_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$prev1_monchar[i],"_B2",sep="")]][i]
+  rust$ls32daytoa_B3_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$prev1_monchar[i],"_B3",sep="")]][i]
+  rust$ls32daytoa_B4_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$prev1_monchar[i],"_B4",sep="")]][i]
+  rust$ls32daytoa_B5_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$prev1_monchar[i],"_B5",sep="")]][i]
+  rust$ls32daytoa_B6VCID1_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$prev1_monchar[i],"_B6_VCID_1",sep="")]][i]
+  rust$ls32daytoa_B6VCID2_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$prev1_monchar[i],"_B6_VCID_2",sep="")]][i]
+  rust$ls32daytoa_B7_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$prev1_monchar[i],"_B7",sep="")]][i]
+  rust$ls32daytoa_B8_prev1[i]<-rustearth[[paste("LANDSAT_LE7_L1T_32DAY_TOA_",rust$prev1_monchar[i],"_B8",sep="")]][i]
+  
+  rust$TRMMHQprecip_prev1[i]<-rustearth[[paste("TRMM_3B42_",rust$prev1_periodchar[i],"_HQprecipitation",sep="")]][i]
+  rust$TRMMIRprecip_prev1[i]<-rustearth[[paste("TRMM_3B42_",rust$prev1_periodchar[i],"_IRprecipitation",sep="")]][i]
+  rust$TRMMprecip_prev1[i]<-rustearth[[paste("TRMM_3B42_",rust$prev1_periodchar[i],"_precipitation",sep="")]][i]
+  rust$TRMMerror_prev1[i]<-rustearth[[paste("TRMM_3B42_",rust$prev1_periodchar[i],"_relativeError",sep="")]][i]
+  
+  rust$MODIS_13Q1_DetailedQA_prev1[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$prev1_periodchar[i],"_DetailedQA",sep="")]][i]
+  rust$MODIS_13Q1_EVI_prev1[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$prev1_periodchar[i],"_EVI",sep="")]][i]
+  rust$MODIS_13Q1_NDVI_prev1[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$prev1_periodchar[i],"_NDVI",sep="")]][i]
+  rust$MODIS_13Q1_SummaryQA_prev1[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$prev1_periodchar[i],"_SummaryQA",sep="")]][i]
+  rust$MODIS_13Q1_SolarZ_prev1[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$prev1_periodchar[i],"_SolarZenith",sep="")]][i]
+  rust$MODIS_13Q1_b01_prev1[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$prev1_periodchar[i],"_sur_refl_b01",sep="")]][i]
+  rust$MODIS_13Q1_b02_prev1[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$prev1_periodchar[i],"_sur_refl_b02",sep="")]][i]
+  rust$MODIS_13Q1_b03_prev1[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$prev1_periodchar[i],"_sur_refl_b03",sep="")]][i]
+  rust$MODIS_13Q1_b07_prev1[i]<-rustearth[[paste("MODIS_MOD13Q1_",rust$prev1_periodchar[i],"_sur_refl_b07",sep="")]][i]
+  
+  rust$MODIS_11A2_clearskydays_prev1[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$prev1_periodchar[i],"_Clear_sky_days",sep="")]][i]
+  rust$MODIS_11A2_clearskynights_prev1[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$prev1_periodchar[i],"_Clear_sky_nights",sep="")]][i]
+  rust$MODIS_11A2_Emis31_prev1[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$prev1_periodchar[i],"_Emis_31",sep="")]][i]
+  rust$MODIS_11A2_Emis32_prev1[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$prev1_periodchar[i],"_Emis_32",sep="")]][i]
+  rust$MODIS_11A2_LSTDay1km_prev1[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$prev1_periodchar[i],"_LST_Day_1km",sep="")]][i]
+  rust$MODIS_11A2_LSTNight1km_prev1[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$prev1_periodchar[i],"_LST_Night_1km",sep="")]][i]
+  rust$MODIS_11A2_QCDay_prev1[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$prev1_periodchar[i],"_QC_Day",sep="")]][i]
+  rust$MODIS_11A2_QCNight_prev1[i]<-rustearth[[paste("MODIS_MYD11A2_",rust$prev1_periodchar[i],"_QC_Night",sep="")]][i]
+  
+  
+}
+
+
+
+names(rust)
+
+###########################################################################################
+#select variables for modeling, StemRust.Binary is response
+rust2<-data.frame(rust[,c(40,8,3,5,20,15:18,52:113)],rustearth[,c(43:45,874:886)])
+#remove rows with StemRust.Binary missing
+rust3<-rust2[!is.na(rust2$StemRust.Binary),]
+#test if there is missing for observation year, no missing
+sum(is.na(rust3$ObsYear))
+
+#Replace numeric missing values with mean of the column
+replaceNA<-function(x){
+  x<-as.numeric(x)
+  x[is.na(x)]<-mean(x,na.rm=TRUE)
+  return(x)
+}
+#create new category "blank" for missing values in categorical variables
+replaceblank<-function(x){
+  x<-as.character(x)
+  x[nchar(x)==0]<-"blank"
+  return(x)
+}
+
+#rm(rust4)
+
+rr<-apply(rust3[,3:5],2,replaceblank)
+aa<-apply(rust3[,6:89],2,replaceNA)
+
+rust4<-data.frame(rust3$StemRust.Binary,rust3$ObsYear,apply(rust3[,3:5],2,replaceblank),apply(rust3[,6:87],2,replaceNA))
+colnames(rust4)[1] <-"StemRust.Binary"
+colnames(rust4)[2] <-"ObsYear"
+
+#make sure StemRust.Binary is not numeric
+rust4$StemRust.Binary<-as.factor(rust4$StemRust.Binary)
+
+#Test the class of each variables before modeling
+classvec<-NA
+for(i in 1:ncol(tr)){
+  classvec[i]<-class(tr[,i])
+}
+cbind(colnames(tr),classvec)
+
+############################################################################
+#set.seed(12)
+#TrID<-sample(nrow(rust4),0.65*nrow(rust4),replace=F)
+#tr<-data.frame(rust4[TrID,])
+#te<-data.frame(rust4[-TrID,])
+
+table(rust4$ObsYear)
+#use 2014-2016 as testing data, the rest are training data
+#variable ObsYear excluded from independent variable list 
+tr<-data.frame(rust4[!rust4$ObsYear %in% c(2014,2015,2016),names(rust4)!="ObsYear"])
+te<-data.frame(rust4[rust4$ObsYear %in% c(2014),names(rust4)!="ObsYear"])
+
+class(tr$StemRust.Binary)
+
+##############################################################################
+library(randomForest)
+
+#decide how many variables used in each tree
+round(sqrt(ncol(tr)-1))
+
+table(factor(tr$StemRust.Binary))
+
+rf<-randomForest(as.factor(StemRust.Binary)~.,data=tr,importance=T,mtry=10,ntree=100,na.action=na.omit)
+
+pred.rf=as.character(predict(rf,te,type="class"))
+table(pred.rf,te$StemRust.Binary)
+sum(pred.rf==te$StemRust.Binary)/nrow(te)
+
+################################################################################
+library(gbm)
+tr$StemRust.Binary=ifelse(as.character(tr$StemRust.Binary),1,0)
+
+boost=gbm(StemRust.Binary~.,tr,distribution="adaboost",n.tree=1500,shrinkage=0.05,bag.fraction=0.5,cv.folds= 5)
+size=gbm.perf(boost,method="cv")
+
+pred.boost=predict.gbm(boost,n.tree=size,newdata=te)  
+pred.boo=ifelse(pred.boost>0.5,"TRUE","FALSE")
+sum(pred.boo==as.character(te$StemRust.Binary))/nrow(te)
